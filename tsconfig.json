@@ -10,6 +10,11 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
+    "paths": {
+      "ngx-panster": [
+        "./dist/ngx-panster"
+      ]
+    },
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
