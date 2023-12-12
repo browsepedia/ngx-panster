@@ -1,24 +1,45 @@
-# NgxPanster
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.0.0.
+## ngx-panster - A simple content panning/zooming library
+NgxPanster is a simple Angular 17 content panning and zooming library. 
+### Installation
+```npm 
+npm install @browsepedia/ngx-panster
+```
 
-## Code scaffolding
+###  Usage
+```html
+<button  (click)="panster.zoomIn(25)">zoom in</button>
+<button  (click)="panster.zoomOut(25)">zoom out</button>
+<button  (click)="panster.centerContentTop()">centerTop</button>
+<button  (click)="panster.centerContent()">center</button>
+<ngx-panster  #panster>
+	<!-- CONTENT -->
+</ngx-panster>
+ ``` 
+ 
+ #### The library uses the Standalone API
+ ```ts
+import { NgxPansterComponent } from '@browsepedia/ngx-panster';
 
-Run `ng generate component component-name --project ngx-panster` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project ngx-panster`.
-> Note: Don't forget to add `--project ngx-panster` or else it will be added to the default project in your `angular.json` file. 
+ @Component({
+	selector:  'app-root',
+	standalone:  true,
+	imports:  [NgxPansterComponent],
+	templateUrl:  './app.component.html',
+})
+export  class  AppComponent {}
+```
 
-## Build
+### NgxPansterComponent inputs
+| Name                   | Description                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| zoomPercentage: number | Sets the zoom of the content (good use case is with slider to determine the zoom) |
 
-Run `ng build ngx-panster` to build the project. The build artifacts will be stored in the `dist/` directory.
+### NgxPansterComponent methods
 
-## Publishing
-
-After building your library with `ng build ngx-panster`, go to the dist folder `cd dist/ngx-panster` and run `npm publish`.
-
-## Running unit tests
-
-Run `ng test ngx-panster` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+| Method name                 | Description                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| zoomIn(percentage: number)  | A method that receives a percentage (25 for 25%) and zooms the content in with the given percentage  |
+| zoomOut(percentage: number) | A method that receives a percentage (25 for 25%) and zooms the content out with the given percentage |
+| centerContent()             | no parameter                                                                                         | A method that centers the content both vertically and horizontally           |
+| centerContentTop()          | no parameter                                                                                         | A method that centers the content both horizontally and aligns it to the top |

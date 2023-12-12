@@ -6,7 +6,7 @@ import { NgxPansterComponent } from '../../projects/ngx-panster/src/public-api';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, NgxPansterComponent],
+  imports: [NgxPansterComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {}

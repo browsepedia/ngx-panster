@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Input,
   ViewChild,
   inject,
 } from '@angular/core';
@@ -10,7 +11,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, filter, from, fromEvent, takeUntil, tap } from 'rxjs';
 import {
   centerContent,
+  centerContentPoint,
   centerContentTop,
+  setElementZoom,
   zoomElementIn,
   zoomElementOut,
 } from './ngx-panster.utils';
@@ -23,6 +26,10 @@ import {
   styleUrl: './ngx-panster.component.scss',
 })
 export class NgxPansterComponent implements AfterViewInit {
+  @Input() public set zoomPercentage(percentage: number) {
+    setElementZoom(this._panElement.nativeElement, percentage);
+  }
+
   @ViewChild('panElement')
   private readonly _panElement!: ElementRef<HTMLDivElement>;
 
@@ -36,7 +43,16 @@ export class NgxPansterComponent implements AfterViewInit {
   private _initialPanY = 0;
 
   private readonly _destroyRef = inject(DestroyRef);
-  private pattern = /-?\b\d+(?=px\b)/g;
+  private pattern = /-?\b\d+(\.\d+)?(?=px\b)/g;
+
+  public get zoomPercentage(): number {
+    const currentZoom =
+      this._panElement?.nativeElement.style.transform?.match(
+        /scale\((.*?)\)/
+      )?.[1] || '1';
+
+    return Number(currentZoom) * 100;
+  }
 
   zoomIn(percentage: number) {
     zoomElementIn(this._panElement.nativeElement, percentage);
@@ -44,6 +60,27 @@ export class NgxPansterComponent implements AfterViewInit {
 
   zoomOut(percentage: number) {
     zoomElementOut(this._panElement.nativeElement, percentage);
+  }
+
+  centerElementPoint(x: number, y: number): void {
+    const rect = this._panElement.nativeElement.getBoundingClientRect();
+
+    const contentX = x - rect.left;
+    const contentY = y - rect.top;
+
+    if (
+      contentX >= 0 &&
+      contentX <= rect.width &&
+      contentY >= 0 &&
+      contentY <= rect.height
+    ) {
+      centerContentPoint(
+        this._panContainer.nativeElement,
+        this._panElement.nativeElement,
+        contentX,
+        contentY
+      );
+    }
   }
 
   centerContent(): void {
@@ -61,14 +98,16 @@ export class NgxPansterComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    fromEvent<MouseEvent>(this._panElement.nativeElement, 'mouseleave').pipe(
-      takeUntilDestroyed(this._destroyRef),
-      filter(() => this.isPanning),
-      tap(() => {
-        this.isPanning = false;
-        this._mouseDownEvent = undefined;
-      })
-    );
+    fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mouseleave')
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        filter(() => this.isPanning),
+        tap(() => {
+          this.isPanning = false;
+          this._mouseDownEvent = undefined;
+        })
+      )
+      .subscribe();
 
     fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mousedown')
       .pipe(
@@ -77,22 +116,20 @@ export class NgxPansterComponent implements AfterViewInit {
           this.isPanning = true;
 
           if (this._panElement.nativeElement.style.left) {
-            this._initialPanX = parseInt(
+            this._initialPanX = parseFloat(
               this._panElement.nativeElement.style.left.match(
                 this.pattern
-              )?.[0] || '0',
-              10
+              )?.[0] || '0'
             );
           } else {
             this._initialPanX = 0;
           }
 
           if (this._panElement.nativeElement.style.top) {
-            this._initialPanY = parseInt(
+            this._initialPanY = parseFloat(
               this._panElement.nativeElement.style.top.match(
                 this.pattern
-              )?.[0] || '0',
-              10
+              )?.[0] || '0'
             );
           } else {
             this._initialPanY = 0;
@@ -105,7 +142,7 @@ export class NgxPansterComponent implements AfterViewInit {
     fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mouseup')
       .pipe(
         filter(() => this.isPanning),
-        tap((event) => {
+        tap(() => {
           this.isPanning = false;
           this._mouseDownEvent = undefined;
         }),
