@@ -6,7 +6,9 @@
 
 <button (click)="panster.centerContent()">center</button>
 
-<ngx-panster #panster>
+{{ panster.zoomPercentage }}
+
+<ngx-panster #panster minZoom="35" maxZoom="200">
   <div
     style="
       display: grid;

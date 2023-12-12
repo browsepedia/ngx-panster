@@ -6,17 +6,11 @@ import {
   Input,
   ViewChild,
   inject,
+  numberAttribute,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, filter, from, fromEvent, takeUntil, tap } from 'rxjs';
-import {
-  centerContent,
-  centerContentPoint,
-  centerContentTop,
-  setElementZoom,
-  zoomElementIn,
-  zoomElementOut,
-} from './ngx-panster.utils';
+import { filter, fromEvent, tap } from 'rxjs';
+import { NgxPansterUtils } from './ngx-panster.utils';
 
 @Component({
   selector: 'ngx-panster',
@@ -24,17 +18,28 @@ import {
   imports: [],
   templateUrl: './ngx-panster.component.html',
   styleUrl: './ngx-panster.component.scss',
+  providers: [NgxPansterUtils],
 })
 export class NgxPansterComponent implements AfterViewInit {
   @Input() public set zoomPercentage(percentage: number) {
-    setElementZoom(this._panElement.nativeElement, percentage);
+    this._utils.setElementZoom(percentage);
   }
 
+  @Input({ transform: numberAttribute }) public minZoom: number = 10;
+  @Input({ transform: numberAttribute }) public maxZoom?: number;
+  @Input({ transform: numberAttribute }) public zoomStep = 25;
+
   @ViewChild('panElement')
-  private readonly _panElement!: ElementRef<HTMLDivElement>;
+  private set _panElementRef(element: ElementRef<HTMLDivElement>) {
+    this._utils.setPanElement(element.nativeElement);
+    this._panElement = element.nativeElement;
+  }
 
   @ViewChild('panContainer')
-  private readonly _panContainer!: ElementRef<HTMLDivElement>;
+  private set _panContainerRef(element: ElementRef<HTMLDivElement>) {
+    this._utils.setContainerElement(element.nativeElement);
+    this._panContainer = element.nativeElement;
+  }
 
   protected isPanning = false;
 
@@ -45,60 +50,48 @@ export class NgxPansterComponent implements AfterViewInit {
   private readonly _destroyRef = inject(DestroyRef);
   private pattern = /-?\b\d+(\.\d+)?(?=px\b)/g;
 
+  private readonly _utils = inject(NgxPansterUtils);
+
+  private _panElement!: HTMLDivElement;
+  private _panContainer!: HTMLDivElement;
+
   public get zoomPercentage(): number {
     const currentZoom =
-      this._panElement?.nativeElement.style.transform?.match(
-        /scale\((.*?)\)/
-      )?.[1] || '1';
+      this._panElement?.style.transform?.match(/scale\((.*?)\)/)?.[1] || '1';
 
     return Number(currentZoom) * 100;
   }
 
-  zoomIn(percentage: number) {
-    zoomElementIn(this._panElement.nativeElement, percentage);
+  zoomIn(percentage?: number) {
+    this._utils.zoomElementIn(percentage || this.zoomStep, this.maxZoom);
   }
 
-  zoomOut(percentage: number) {
-    zoomElementOut(this._panElement.nativeElement, percentage);
+  zoomOut(percentage?: number) {
+    this._utils.zoomElementOut(percentage || this.zoomStep, this.minZoom);
+  }
+
+  centerX(): void {
+    this._utils.centerX();
+  }
+
+  centerY(): void {
+    this._utils.centerY();
   }
 
   centerElementPoint(x: number, y: number): void {
-    const rect = this._panElement.nativeElement.getBoundingClientRect();
-
-    const contentX = x - rect.left;
-    const contentY = y - rect.top;
-
-    if (
-      contentX >= 0 &&
-      contentX <= rect.width &&
-      contentY >= 0 &&
-      contentY <= rect.height
-    ) {
-      centerContentPoint(
-        this._panContainer.nativeElement,
-        this._panElement.nativeElement,
-        contentX,
-        contentY
-      );
-    }
+    this._utils.centerContentPoint(x, y);
   }
 
   centerContent(): void {
-    centerContent(
-      this._panContainer.nativeElement,
-      this._panElement.nativeElement
-    );
+    this._utils.centerContent();
   }
 
   centerContentTop(): void {
-    centerContentTop(
-      this._panContainer.nativeElement,
-      this._panElement.nativeElement
-    );
+    this._utils.centerContentTop();
   }
 
   ngAfterViewInit(): void {
-    fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mouseleave')
+    fromEvent<MouseEvent>(this._panContainer, 'mouseleave')
       .pipe(
         takeUntilDestroyed(this._destroyRef),
         filter(() => this.isPanning),
@@ -109,27 +102,23 @@ export class NgxPansterComponent implements AfterViewInit {
       )
       .subscribe();
 
-    fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mousedown')
+    fromEvent<MouseEvent>(this._panContainer, 'mousedown')
       .pipe(
         tap((event) => {
           this._mouseDownEvent = event;
           this.isPanning = true;
 
-          if (this._panElement.nativeElement.style.left) {
+          if (this._panElement.style.left) {
             this._initialPanX = parseFloat(
-              this._panElement.nativeElement.style.left.match(
-                this.pattern
-              )?.[0] || '0'
+              this._panElement.style.left.match(this.pattern)?.[0] || '0'
             );
           } else {
             this._initialPanX = 0;
           }
 
-          if (this._panElement.nativeElement.style.top) {
+          if (this._panElement.style.top) {
             this._initialPanY = parseFloat(
-              this._panElement.nativeElement.style.top.match(
-                this.pattern
-              )?.[0] || '0'
+              this._panElement.style.top.match(this.pattern)?.[0] || '0'
             );
           } else {
             this._initialPanY = 0;
@@ -139,7 +128,7 @@ export class NgxPansterComponent implements AfterViewInit {
       )
       .subscribe();
 
-    fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mouseup')
+    fromEvent<MouseEvent>(this._panContainer, 'mouseup')
       .pipe(
         filter(() => this.isPanning),
         tap(() => {
@@ -150,19 +139,19 @@ export class NgxPansterComponent implements AfterViewInit {
       )
       .subscribe();
 
-    fromEvent<MouseEvent>(this._panContainer.nativeElement, 'mousemove')
+    fromEvent<MouseEvent>(this._panContainer, 'mousemove')
       .pipe(
         takeUntilDestroyed(this._destroyRef),
         filter(() => this.isPanning),
-        tap((event) => {
-          const offsetX = event.pageX - (this._mouseDownEvent?.pageX || 0);
-          const offsetY = event.pageY - (this._mouseDownEvent?.pageY || 0);
-
-          const newLeft = this._initialPanX + offsetX;
-          const newTop = this._initialPanY + offsetY;
-          this._panElement.nativeElement.style.left = `${newLeft}px`;
-          this._panElement.nativeElement.style.top = `${newTop}px`;
-        })
+        tap((event) =>
+          this._utils.updatePosition(
+            event.pageX,
+            event.pageY,
+            this._initialPanX,
+            this._initialPanY,
+            this._mouseDownEvent as MouseEvent
+          )
+        )
       )
       .subscribe();
   }

@@ -1,27 +1,54 @@
-# NgxPansterDemo
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.0.6.
+## ngx-panster - A simple content panning/zooming library
+NgxPanster is a simple Angular 17 content panning and zooming library. 
+### Installation
+```npm 
+npm install ngx-panster
+```
 
-## Development server
+### DEMO
+You can find a stackblitz demo [here](https://stackblitz.com/edit/angular-i6deiw).
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+###  Usage
+```html
+<button  (click)="panster.zoomIn(25)">Zoom in</button>
+<button  (click)="panster.zoomOut(25)">Zoom out</button>
+<button  (click)="panster.centerContentTop()">Center top</button>
+<button  (click)="panster.centerContent()">Center</button>
+<ngx-panster  #panster>
+	<!-- CONTENT -->
+</ngx-panster>
+ ``` 
+ 
+ #### The library uses the Standalone API
+ ```ts
+import { NgxPansterComponent } from 'ngx-panster';
 
-## Code scaffolding
+ @Component({
+	selector:  'app-root',
+	standalone:  true,
+	imports:  [NgxPansterComponent],
+	templateUrl:  './app.component.html',
+})
+export  class  AppComponent {}
+```
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### NgxPansterComponent inputs
+| Name                   | Description                                                                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| zoomPercentage: number | Sets the zoom of the content (good use case is with slider to determine the zoom)                                                                          |
+| minZoom: number        | The minimum zoom percentage allowed. Calling zoomOut will set the zoom to minZoom's value if the new value would be less than minZoom. Defaults to 10      |
+| maxZoom: number        | The maximum zoom percentage allowed. Calling zoomOut will set the zoom to maxZoom's value if the new value would be greater than maxZoom. No default value |
+| zoomStep: number       | Sets the default zoomIn/zoomOut value. Defaults to 25%.                                                                                                    |
 
-## Build
+### NgxPansterComponent methods
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+| Method name                              | Description                                                                                                                                                                            |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| zoomIn(percentage: number)               | A method that receives a percentage (25 for 25%) and zooms the content in with the given percentage                                                                                    |
+| zoomOut(percentage: number)              | A method that receives a percentage (25 for 25%) and zooms the content out with the given percentage                                                                                   |
+| centerContent()                          | A method that centers the content both vertically and horizontally                                                                                                                     |
+| centerContentTop()                       | A method that centers the content both horizontally and aligns it to the top                                                                                                           |
+| centerElementPoint(x: number, y: number) | A method that receives pageX and pageY coordinates and centers them within the pan element. If the x and y coordinates are NOT within the pan element then this function does nothing. |
+| centerX()                                | A method that centers the content horizontally                                                                                                                                         |
+| centerY()                                | A method that centers the content vertically                                                                                                                                           |

@@ -1,6 +1,13 @@
 {
   "name": "ngx-panster",
-  "version": "0.0.4",
+  "version": "0.0.6",
+  "keywords": [
+    "Angular 17",
+    "zooming",
+    "panning",
+    "panzoom"
+  ],
+  "homepage": "https://github.com/browsepedia/ngx-panster",
   "peerDependencies": {
     "@angular/common": "^17.0.0",
     "@angular/core": "^17.0.0"

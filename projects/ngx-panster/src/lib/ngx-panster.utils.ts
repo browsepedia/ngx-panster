@@ -1,69 +1,111 @@
-export const zoomElementIn = (
-  element: HTMLElement,
-  percentage: number
-): void => {
-  const currentScale = parseFloat(
-    element.style.transform?.match(/scale\((.*?)\)/)?.[1] || '1'
-  );
-  const newScale = currentScale + percentage / 100;
-  element.style.transform = `scale(${newScale})`;
-};
+import { Injectable } from '@angular/core';
 
-export const setElementZoom = (
-  element: HTMLElement,
-  percentage: number
-): void => {
-  const newScale = percentage / 100;
-  element.style.transform = `scale(${newScale})`;
-};
+@Injectable()
+export class NgxPansterUtils {
+  private _container!: HTMLElement;
+  private _content!: HTMLElement;
 
-export const zoomElementOut = (
-  element: HTMLElement,
-  percentage: number
-): void => {
-  const currentScale = parseFloat(
-    element.style.transform?.match(/scale\((.*?)\)/)?.[1] || '1'
-  );
-  const newScale = currentScale - percentage / 100;
-  element.style.transform = `scale(${newScale})`;
-};
+  setContainerElement(element: HTMLElement): void {
+    this._container = element;
+  }
 
-export const centerContentTop = (
-  container: HTMLElement,
-  content: HTMLElement
-) => {
-  content.style.top = `0px`;
+  setPanElement(element: HTMLElement): void {
+    this._content = element;
+  }
 
-  const containerWidth = container.offsetWidth;
-  const contentWidth = content.offsetWidth;
-  const leftPosition = (containerWidth - contentWidth) / 2;
-  content.style.left = `${leftPosition}px`;
-};
+  updatePosition(
+    x: number,
+    y: number,
+    initialX: number,
+    initialY: number,
+    initialEvent: MouseEvent
+  ): void {
+    const offsetX = x - initialEvent.pageX;
+    const offsetY = y - initialEvent.pageY;
 
-export const centerContent = (container: HTMLElement, content: HTMLElement) => {
-  const containerHeight = container.offsetHeight;
-  const contentHeight = content.offsetHeight;
-  const topPosition = (containerHeight - contentHeight) / 2;
-  content.style.top = `${topPosition}px`;
+    const newLeft = initialX + offsetX;
+    const newTop = initialY + offsetY;
+    this._content.style.left = `${newLeft}px`;
+    this._content.style.top = `${newTop}px`;
+  }
 
-  const containerWidth = container.offsetWidth;
-  const contentWidth = content.offsetWidth;
-  const leftPosition = (containerWidth - contentWidth) / 2;
-  content.style.left = `${leftPosition}px`;
-};
+  zoomElementIn(percentage: number, maxZoom?: number): void {
+    const currentScale = parseFloat(
+      this._content.style.transform?.match(/scale\((.*?)\)/)?.[1] || '1'
+    );
+    let newScale = currentScale + percentage / 100;
 
-export const centerContentPoint = (
-  container: HTMLElement,
-  content: HTMLElement,
-  x: number,
-  y: number
-) => {
-  const containerWidth = container.offsetWidth;
-  const containerHeight = container.offsetHeight;
+    if (maxZoom && newScale > maxZoom / 100) {
+      newScale = maxZoom / 100;
+    }
 
-  const leftPosition = containerWidth / 2 - x;
-  const topPosition = containerHeight / 2 - y;
+    this._content.style.transform = `scale(${newScale})`;
+  }
 
-  content.style.left = `${leftPosition}px`;
-  content.style.top = `${topPosition}px`;
-};
+  setElementZoom(percentage: number): void {
+    const newScale = percentage / 100;
+    this._content.style.transform = `scale(${newScale})`;
+  }
+
+  zoomElementOut(percentage: number, minZoom: number): void {
+    const currentScale = parseFloat(
+      this._content.style.transform?.match(/scale\((.*?)\)/)?.[1] || '1'
+    );
+
+    let newScale = currentScale - percentage / 100;
+
+    if (newScale < minZoom / 100) {
+      newScale = minZoom / 100;
+    }
+
+    this._content.style.transform = `scale(${newScale})`;
+  }
+
+  centerX() {
+    const containerWidth = this._container.offsetWidth;
+    const contentWidth = this._content.offsetWidth;
+    const leftPosition = (containerWidth - contentWidth) / 2;
+    this._content.style.left = `${leftPosition}px`;
+  }
+
+  centerY() {
+    const containerHeight = this._container.offsetHeight;
+    const contentHeight = this._content.offsetHeight;
+    const topPosition = (containerHeight - contentHeight) / 2;
+    this._content.style.top = `${topPosition}px`;
+  }
+
+  centerContentTop() {
+    this._content.style.top = `0px`;
+
+    this.centerX();
+  }
+
+  centerContent() {
+    this.centerX();
+    this.centerY();
+  }
+
+  centerContentPoint(x: number, y: number) {
+    const rect = this._content.getBoundingClientRect();
+
+    const contentX = x - rect.left;
+    const contentY = y - rect.top;
+
+    if (
+      contentX >= 0 &&
+      contentX <= rect.width &&
+      contentY >= 0 &&
+      contentY <= rect.height
+    ) {
+      const containerWidth = this._container.offsetWidth;
+      const containerHeight = this._container.offsetHeight;
+
+      const leftPosition = containerWidth / 2 - x;
+      const topPosition = containerHeight / 2 - y;
+
+      this._content.style.left = `${leftPosition}px`;
+      this._content.style.top = `${topPosition}px`;
+    }
+  }
+}
