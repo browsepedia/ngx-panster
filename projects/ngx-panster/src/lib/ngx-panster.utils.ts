@@ -39,12 +39,13 @@ export class NgxPansterUtils {
       newScale = maxZoom / 100;
     }
 
-    this._content.style.transform = `scale(${newScale})`;
+    this._setElementScale(newScale);
   }
 
   setElementZoom(percentage: number): void {
     const newScale = percentage / 100;
-    this._content.style.transform = `scale(${newScale})`;
+
+    this._setElementScale(newScale);
   }
 
   zoomElementOut(percentage: number, minZoom: number): void {
@@ -58,7 +59,7 @@ export class NgxPansterUtils {
       newScale = minZoom / 100;
     }
 
-    this._content.style.transform = `scale(${newScale})`;
+    this._setElementScale(newScale);
   }
 
   centerX() {
@@ -107,5 +108,13 @@ export class NgxPansterUtils {
       this._content.style.left = `${leftPosition}px`;
       this._content.style.top = `${topPosition}px`;
     }
+  }
+
+  private _setElementScale(scale: number) {
+    setTimeout(() => {
+      if (this._content) {
+        this._content.style.transform = `scale(${scale})`;
+      }
+    });
   }
 }
