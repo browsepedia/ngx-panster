@@ -103,38 +103,25 @@ export class NgxPansterComponent implements AfterViewInit {
       .subscribe();
 
     fromEvent<MouseEvent>(this._panContainer, 'mousedown')
-      .pipe(
-        tap((event) => {
-          this._mouseDownEvent = event;
-          this.isPanning = true;
+      .pipe(tap(this._onMouseDown), takeUntilDestroyed(this._destroyRef))
+      .subscribe();
 
-          if (this._panElement.style.left) {
-            this._initialPanX = parseFloat(
-              this._panElement.style.left.match(this.pattern)?.[0] || '0'
-            );
-          } else {
-            this._initialPanX = 0;
-          }
-
-          if (this._panElement.style.top) {
-            this._initialPanY = parseFloat(
-              this._panElement.style.top.match(this.pattern)?.[0] || '0'
-            );
-          } else {
-            this._initialPanY = 0;
-          }
-        }),
-        takeUntilDestroyed(this._destroyRef)
-      )
+    fromEvent<MouseEvent>(this._panContainer, 'touchdown')
+      .pipe(tap(this._onMouseDown), takeUntilDestroyed(this._destroyRef))
       .subscribe();
 
     fromEvent<MouseEvent>(this._panContainer, 'mouseup')
       .pipe(
         filter(() => this.isPanning),
-        tap(() => {
-          this.isPanning = false;
-          this._mouseDownEvent = undefined;
-        }),
+        tap(this._onMouseUp),
+        takeUntilDestroyed(this._destroyRef)
+      )
+      .subscribe();
+
+    fromEvent<MouseEvent>(this._panContainer, 'touchend')
+      .pipe(
+        filter(() => this.isPanning),
+        tap(this._onMouseUp),
         takeUntilDestroyed(this._destroyRef)
       )
       .subscribe();
@@ -143,16 +130,51 @@ export class NgxPansterComponent implements AfterViewInit {
       .pipe(
         takeUntilDestroyed(this._destroyRef),
         filter(() => this.isPanning),
-        tap((event) =>
-          this._utils.updatePosition(
-            event.pageX,
-            event.pageY,
-            this._initialPanX,
-            this._initialPanY,
-            this._mouseDownEvent as MouseEvent
-          )
-        )
+        tap(this._onMouseMove)
+      )
+      .subscribe();
+
+    fromEvent<MouseEvent>(this._panContainer, 'touchmove')
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        filter(() => this.isPanning),
+        tap(this._onMouseMove)
       )
       .subscribe();
   }
+
+  private readonly _onMouseDown = (event: MouseEvent): void => {
+    this._mouseDownEvent = event;
+    this.isPanning = true;
+
+    if (this._panElement.style.left) {
+      this._initialPanX = parseFloat(
+        this._panElement.style.left.match(this.pattern)?.[0] || '0'
+      );
+    } else {
+      this._initialPanX = 0;
+    }
+
+    if (this._panElement.style.top) {
+      this._initialPanY = parseFloat(
+        this._panElement.style.top.match(this.pattern)?.[0] || '0'
+      );
+    } else {
+      this._initialPanY = 0;
+    }
+  };
+
+  private readonly _onMouseUp = (event: MouseEvent): void => {
+    this.isPanning = false;
+    this._mouseDownEvent = undefined;
+  };
+
+  private readonly _onMouseMove = (event: MouseEvent) =>
+    this._utils.updatePosition(
+      event.pageX,
+      event.pageY,
+      this._initialPanX,
+      this._initialPanY,
+      this._mouseDownEvent as MouseEvent
+    );
 }
