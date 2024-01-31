@@ -18,10 +18,19 @@ export class NgxPansterUtils {
     y: number,
     initialX: number,
     initialY: number,
-    initialEvent: MouseEvent
+    initialEvent: MouseEvent | TouchEvent
   ): void {
-    const offsetX = x - initialEvent.pageX;
-    const offsetY = y - initialEvent.pageY;
+    const pageX =
+      initialEvent instanceof MouseEvent
+        ? initialEvent.pageX
+        : initialEvent.touches[0].pageX;
+    const pageY =
+      initialEvent instanceof MouseEvent
+        ? initialEvent.pageY
+        : initialEvent.touches[0].pageY;
+
+    const offsetX = x - pageX;
+    const offsetY = y - pageY;
 
     const newLeft = initialX + offsetX;
     const newTop = initialY + offsetY;

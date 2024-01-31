@@ -43,7 +43,7 @@ export class NgxPansterComponent implements AfterViewInit {
 
   protected isPanning = false;
 
-  private _mouseDownEvent?: MouseEvent;
+  private _startEvent?: MouseEvent | TouchEvent;
   private _initialPanX = 0;
   private _initialPanY = 0;
 
@@ -97,7 +97,7 @@ export class NgxPansterComponent implements AfterViewInit {
         filter(() => this.isPanning),
         tap(() => {
           this.isPanning = false;
-          this._mouseDownEvent = undefined;
+          this._startEvent = undefined;
         })
       )
       .subscribe();
@@ -106,7 +106,7 @@ export class NgxPansterComponent implements AfterViewInit {
       .pipe(tap(this._onMouseDown), takeUntilDestroyed(this._destroyRef))
       .subscribe();
 
-    fromEvent<MouseEvent>(this._panContainer, 'touchdown')
+    fromEvent<MouseEvent>(this._panContainer, 'touchstart')
       .pipe(tap(this._onMouseDown), takeUntilDestroyed(this._destroyRef))
       .subscribe();
 
@@ -143,9 +143,13 @@ export class NgxPansterComponent implements AfterViewInit {
       .subscribe();
   }
 
-  private readonly _onMouseDown = (event: MouseEvent): void => {
-    this._mouseDownEvent = event;
+  private readonly _onMouseDown = (event: MouseEvent | TouchEvent): void => {
+    this._startEvent = event;
     this.isPanning = true;
+
+    if (event instanceof TouchEvent) {
+      event.stopPropagation();
+    }
 
     if (this._panElement.style.left) {
       this._initialPanX = parseFloat(
@@ -166,15 +170,27 @@ export class NgxPansterComponent implements AfterViewInit {
 
   private readonly _onMouseUp = (event: MouseEvent): void => {
     this.isPanning = false;
-    this._mouseDownEvent = undefined;
+    this._startEvent = undefined;
   };
 
-  private readonly _onMouseMove = (event: MouseEvent) =>
+  private readonly _onMouseMove = (event: MouseEvent | TouchEvent) => {
+    const pageX =
+      event instanceof MouseEvent ? event.pageX : event.touches[0].pageX;
+    const pageY =
+      event instanceof MouseEvent ? event.pageY : event.touches[0].pageY;
+
+    if (event instanceof TouchEvent) {
+      event.stopPropagation();
+    }
+
+    console.log('pageX', pageX, pageY);
+
     this._utils.updatePosition(
-      event.pageX,
-      event.pageY,
+      pageX,
+      pageY,
       this._initialPanX,
       this._initialPanY,
-      this._mouseDownEvent as MouseEvent
+      this._startEvent as MouseEvent | TouchEvent
     );
+  };
 }
